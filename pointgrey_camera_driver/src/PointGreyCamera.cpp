@@ -165,6 +165,10 @@ bool PointGreyCamera::setNewConfiguration(pointgrey_camera_driver::PointGreyConf
       retVal &= false;
   }
 
+  // set High Speed
+  PointGreyCamera::setHighPerformance(config.high_speed_mode);
+  PointGreyCamera::setBuffers(config.number_of_buffers);
+
   return retVal;
 }
 
@@ -580,6 +584,28 @@ bool PointGreyCamera::setWhiteBalance(bool &auto_white_balance, uint16_t &blue, 
   return true;
 }
 
+void PointGreyCamera::setHighPerformance(bool high_performance)
+{
+  FC2Config pConfig;
+  Error error = cam_.GetConfiguration(&pConfig);
+  PointGreyCamera::handleError("PointGreyCamera::enableHighPerformance Could not get camera configuration", error);
+  pConfig.highPerformanceRetrieveBuffer = high_performance;
+  error = cam_.SetConfiguration(&pConfig);
+  PointGreyCamera::handleError("PointGreyCamera::enableHighPerformance Could not set camera configuration", error);
+
+
+}
+
+void PointGreyCamera::setBuffers(const int &buffers)
+{
+  FC2Config pConfig;
+  Error error = cam_.GetConfiguration(&pConfig);
+  PointGreyCamera::handleError("PointGreyCamera::enableHighPerformance Could not get camera configuration", error);
+  pConfig.numBuffers = buffers;
+  error = cam_.SetConfiguration(&pConfig);
+  PointGreyCamera::handleError("PointGreyCamera::enableHighPerformance Could not set camera configuration", error);
+}
+
 void PointGreyCamera::setTimeout(const double &timeout)
 {
   FC2Config pConfig;
@@ -860,7 +886,6 @@ void PointGreyCamera::connect()
         // Set packet delay:
         setupGigEPacketDelay(guid, packet_delay_);
     }
-
     error = cam_.Connect(&guid);
     PointGreyCamera::handleError("PointGreyCamera::connect Failed to connect to camera", error);
 
@@ -870,18 +895,27 @@ void PointGreyCamera::connect()
     PointGreyCamera::handleError("PointGreyCamera::connect  Failed to get camera info.", error);
     isColor_ = cInfo.isColorCamera;
 
-    // Enable metadata
+    error = cam_.ResetStats();
+    PointGreyCamera::handleError("PointGreyCamera::connect Failed to reset stats", error);
+
+    EmbeddedImageInfo EmbeddedInfo;
+    cam_.GetEmbeddedImageInfo(&EmbeddedInfo);
+    // We enable the features that are available to retrieve
     EmbeddedImageInfo info;
-    info.timestamp.onOff = true;
-    info.gain.onOff = true;
-    info.shutter.onOff = true;
-    info.brightness.onOff = true;
-    info.exposure.onOff = true;
-    info.whiteBalance.onOff = true;
-    info.frameCounter.onOff = true;
-    info.ROIPosition.onOff = true;
+    info.timestamp.onOff = (EmbeddedInfo.timestamp.available) ? true : false;
+    info.gain.onOff = (EmbeddedInfo.gain.available) ? true : false;
+    info.shutter.onOff = (EmbeddedInfo.shutter.available) ? true : false;
+    info.brightness.onOff = (EmbeddedInfo.brightness.available) ? true : false;
+    info.exposure.onOff = (EmbeddedInfo.exposure.available) ? true : false;
+    info.whiteBalance.onOff = (EmbeddedInfo.whiteBalance.available) ? true : false;
+    info.frameCounter.onOff = (EmbeddedInfo.frameCounter.available) ? true : false;
+    info.strobePattern.onOff = (EmbeddedInfo.strobePattern.available) ? true : false;
+    info.GPIOPinState.onOff = (EmbeddedInfo.GPIOPinState.available) ? true : false;
+    info.ROIPosition.onOff = (EmbeddedInfo.ROIPosition.available) ? true : false;
     error = cam_.SetEmbeddedImageInfo(&info);
-    PointGreyCamera::handleError("PointGreyCamera::connect Could not enable metadata", error);
+    PointGreyCamera::handleError("PointGreyCamera:: Could not enable metadata", error);
+
+
   }
 }
 
@@ -931,6 +965,9 @@ void PointGreyCamera::grabImage(sensor_msgs::Image &image, const std::string &fr
     Error error = cam_.RetrieveBuffer(&rawImage);
     PointGreyCamera::handleError("PointGreyCamera::grabImage Failed to retrieve buffer", error);
     metadata_ = rawImage.GetMetadata();
+//    std::ostringstream metadataInfo ;
+//    metadataInfo << "Frame out of the metadata is: " << metadata_.embeddedFrameCounter ;
+//    ROS_INFO(metadataInfo.str().c_str());
 
     // Set header timestamp as embedded for now
     TimeStamp embeddedTime = rawImage.GetTimeStamp();
@@ -1095,9 +1132,19 @@ uint PointGreyCamera::getShutter()
   return metadata_.embeddedShutter >> 20;
 }
 
+uint PointGreyCamera::getFrameCounter()
+{
+//	std::ostringstream y ;
+//	y << "from getFrameCounter() we get: " << metadata_.embeddedFrameCounter ;
+//	ROS_INFO(y.str().c_str());
+//	return metadata_.embeddedFrameCounter >> 20 ; // why was >> 20?
+	return metadata_.embeddedFrameCounter ;
+
+}
+
 uint PointGreyCamera::getBrightness()
 {
-  return metadata_.embeddedTimeStamp >> 20;
+	return metadata_.embeddedTimeStamp >> 20;
 }
 
 uint PointGreyCamera::getExposure()

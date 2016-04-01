@@ -17,3 +17,5 @@ uint16 white_balance_blue    	# White balance in blue.
 uint16 white_balance_red     	# White balance in red.
 
 float32 temperature          	# Temperature reported by the camera (Celsius).
+
+uint16 frame_counter          	# Frame counter reported by the camera

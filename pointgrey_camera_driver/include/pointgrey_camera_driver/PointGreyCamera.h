@@ -130,6 +130,24 @@ public:
   void setTimeout(const double &timeout);
 
   /*!
+  * \brief Will switch camera to high speed mode.
+  *
+  * This function will switch camera to high speed mode.  Must be called after connect().
+  * \param high_speed Bool to turn on or off the function
+  *
+  */
+  void setHighPerformance(bool high_speed);
+
+  /*!
+  * \brief Will set defined buffers to store in RAM.
+  *
+  * This function will set the set defined buffers.  Must be called after connect().
+  * \param buffers The desired buffers to put in the computer's RAM
+  *
+  */
+  void setBuffers(const int &buffers);
+
+  /*!
   * \brief Used to set the serial number for the camera you wish to connect to.
   *
   * Sets the desired serial number.  If this value is not set, the driver will try to connect to the first camera on the bus.
@@ -164,6 +182,8 @@ public:
   uint getGain();
 
   uint getShutter();
+
+  uint getFrameCounter();
 
   uint getBrightness();
 

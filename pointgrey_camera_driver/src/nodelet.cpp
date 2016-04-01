@@ -330,6 +330,12 @@ private:
 
         wfov_image->temperature = pg_.getCameraTemperature();
 
+        wfov_image->frame_counter = (uint16_t)pg_.getFrameCounter();
+//        uint ohyeah = pg_.getFrameCounter() ;
+//        std::ostringstream fc ;
+//        fc << "frame counter from the pg_.getFrameCounter() is: " << wfov_image->frame_counter << " ohyeah is " << ohyeah;
+//        ROS_INFO(fc.str().c_str());
+
         ros::Time time = ros::Time::now();
         wfov_image->header.stamp = time;
         wfov_image->image.header.stamp = time;
